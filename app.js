@@ -29,7 +29,15 @@
     $('notice').hidden=!notice;set('notice',notice);
     const a=fresh&&last.advice;$('advice').hidden=!a;
     if(a){set('advice-title',a.title||'');set('advice-body',a.advice||'');set('advice-time',hm(a.at));}
-    if(last){$('history').replaceChildren(...last.history.slice().reverse().map(r=>{const tr=document.createElement('tr');for(const v of [hm(r.at),fmt(r.minuteSpend),r.netOrders==null?'—':String(r.netOrders),fmt(r.netRoi)]){const td=document.createElement('td');td.textContent=v;tr.append(td);}tr.title=r.at;return tr;}));}
+    if(last){$('history').replaceChildren(...last.history.slice().reverse().map(r=>{const tr=document.createElement('tr');for(const v of [hm(r.at),fmt(r.minuteSpend),fmt(r.impressionsPerMinute),fmt(r.clicksPerMinute),r.netOrders==null?'—':String(r.netOrders),fmt(r.netRoi),fmt(r.spend)]){const td=document.createElement('td');td.textContent=v;tr.append(td);}tr.title=r.at;return tr;}));
+      const d=last.details||{},percent=v=>v==null?'—':fmt(v*100)+'%';
+      const items=[['数据质量',d.data_quality],['数据源延迟',d.source_age_seconds==null?null:Math.round(d.source_age_seconds)+' 秒'],['今日展示次数',d.impressions],['今日点击次数',d.clicks],['今日支付订单数',d.paid_orders],['今日净成交订单数',d.net_orders],['今日支付成交金额',fmt(d.paid_amount)+' 元'],['今日净成交金额',fmt(d.net_amount)+' 元'],['累计 CPM',fmt(d.cpm)],['累计 CTR',percent(d.ctr)],['累计 CPC',fmt(d.cpc)],['累计支付转化率',percent(d.paid_cvr)],['累计净成交转化率',percent(d.net_cvr)],['支付每单成本',fmt(d.paid_cpo)],['净成交每单成本',fmt(d.net_cpo)],['支付 ROI',fmt(d.paid_roi)],['ROI 目标',fmt(d.target)],['今日预算',fmt(d.daily_budget)+' 元'],['今日剩余预算',fmt(d.budget_remaining)+' 元'],['预算消耗速度',d.budget_burn_rate==null?null:fmt(d.budget_burn_rate)+' 元 / 小时'],['按当前速度可跑',d.budget_eta_minutes==null?null:fmt(d.budget_eta_minutes)+' 分钟']];
+      for(const mins of [5,10,15,30,60]){const w=d['window_'+mins+'m']||{};items.push(['近'+mins+'分钟消耗',w.spend==null?null:fmt(w.spend)+' 元'],['近'+mins+'分钟净 ROI',w.reliable?fmt(w.net_roi):null]);}
+      $('extra-metrics').replaceChildren(...items.filter(([k,v])=>v!=null&&v!=='—'&&!String(v).startsWith('—')).map(([k,v])=>{const div=document.createElement('div'),label=document.createElement('span'),b=document.createElement('b');label.textContent=k;b.textContent=String(v);div.append(label,b);return div;}));
+      const records=(id,rows,describe)=>{const nodes=rows.slice().reverse().map(r=>{const p=document.createElement('p');p.textContent=describe(r);return p;});if(!nodes.length){const p=document.createElement('p');p.textContent='暂无记录';nodes.push(p);}$(id).replaceChildren(...nodes);};
+      records('alerts',last.alerts||[],r=>hm(r.at)+' · '+(r.title||'提醒')+' '+(r.evidence||'')+(r.advice?' 建议：'+r.advice:''));
+      records('events',last.events||[],r=>hm(r.at)+' · '+(r.label||r.field||r.type||'变更')+' '+String(r.before??'—')+' → '+String(r.after??'—'));
+    }
   }
   async function json(url,opts={}){const r=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(14000),...opts});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
   async function discover(force=false){
