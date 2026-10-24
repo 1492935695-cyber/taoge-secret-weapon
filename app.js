@@ -5,7 +5,7 @@
   let savedKey='';try{savedKey=sessionStorage.getItem('taoge-key')||'';}catch(e){}
   const key=location.hash.slice(1)||savedKey;
   if(key)try{sessionStorage.setItem('taoge-key',key);}catch(e){}
-  const local=['127.0.0.1','localhost'].includes(location.hostname);
+  const local=['127.0.0.1','localhost'].includes(location.hostname)||/^[a-z0-9-]+\.trycloudflare\.com$/.test(location.hostname);
   let endpoint=local?location.origin:'',endpointAt=0,last=null,busy=false,lastError='',clockOffset=0;
   const set=(id,v)=>$(id).textContent=v;
   function render(){
@@ -34,6 +34,9 @@
     else if(lastError)notice=last?'连接暂时中断，正在自动重试。下方保留上次数据，当前分钟消耗暂不显示。':'实时数据暂未连接，正在自动重试。请稍候，连接成功后会自动显示。';
     else if(last&&!fresh)notice=last.message||'数据暂未更新，正在自动恢复。当前分钟消耗暂不显示；采集电脑需开机联网并保持千川登录。';
     $('notice').hidden=!notice;set('notice',notice);
+    const canFallback=lastError&&!local&&endpoint&&key;
+    $('fallback-link').hidden=!canFallback;
+    if(canFallback)$('fallback-link').href=endpoint+'/?v=12#'+key;
     const a=fresh&&last.advice;
     $('advice').dataset.level=a?a.level||'hold':'hold';
     if(a){set('advice-title',a.title||'');set('advice-body',a.advice||'');set('advice-time',hm(a.at)+' · 每'+(a.intervalMinutes||5)+'分钟更新');}
