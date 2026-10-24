@@ -4,13 +4,14 @@
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer"><meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#070e1d"><title>涛哥的秘密武器</title>
-  <link rel="stylesheet" href="styles.css?v=6"><link rel="stylesheet" href="future.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=8"><link rel="stylesheet" href="future.css?v=8">
 </head>
 <body>
 <main>
   <header><div class="brand"><span class="brand-mark" aria-hidden="true">涛</span><div><h1>涛哥的秘密武器</h1><p>看清每一分钟，掌握投放节奏。</p></div></div><div class="connection" id="connection" role="status"><span class="dot"></span><span id="connection-text">正在连接</span></div></header>
   <div class="notice" id="notice" hidden></div>
   <section class="hero" aria-label="当前分钟消耗">
+    <div class="meteor-field" aria-hidden="true"><i class="meteor"></i><i class="meteor"></i><i class="meteor"></i><i class="meteor"></i><i class="meteor"></i><i class="meteor"></i></div>
     <div class="circle" id="circle"><div class="circle-content"><span class="eyebrow">当前分钟消耗</span><div class="hero-value"><strong id="minute">—</strong><span>元</span></div><p class="average">今日平均分钟消耗 <b id="average">—</b> 元</p><div class="minute-time" id="minute-time">正在取得最新数据</div></div></div>
     <p class="sampling">按最近采样间隔折算 · 约每分钟采集</p>
   </section>
@@ -21,11 +22,14 @@
     <article class="metric green"><div class="metric-label">今日净成交 ROI</div><div class="metric-value"><b id="net-roi">—</b></div><small id="target">目标 —</small></article>
     <article class="metric teal"><div class="metric-label">净成交转化率</div><div class="metric-value"><b id="net-cvr">—</b><span>%</span></div><small>今日净成交单数 ÷ 今日点击数</small></article>
     <article class="metric coral"><div class="metric-label">净成交每单成本</div><div class="metric-value"><b id="net-cpo">—</b><span>元 / 单</span></div><small id="net-orders">今日消耗 ÷ 今日净成交单数</small></article>
+    <article class="metric blue"><div class="metric-label">千展成本</div><div class="metric-value"><b id="cpm">—</b><span>元</span></div><small>今日消耗 ÷ 展示次数 × 1000</small></article>
+    <article class="metric amber"><div class="metric-label">计划预算余额</div><div class="metric-value"><b id="budget-remaining">—</b><span>元</span></div><small id="daily-budget">今日预算 —</small></article>
+    <article class="metric violet refund-card"><div class="metric-label">退款率 <span class="metric-basis">1小时内</span></div><div class="metric-value"><b id="refund-rate">—</b><span>%</span></div><small id="refund-average">平均退款率 —</small><small class="refund-note" id="refund-source">后台今日报表 · 1小时内退款口径</small></article>
   </section>
-  <section class="advice" id="advice" hidden><div class="advice-icon">!</div><div><div class="advice-heading">当前建议 <span id="advice-time"></span></div><h2 id="advice-title"></h2><p id="advice-body"></p></div></section>
+  <section class="advice" id="advice" aria-label="投放诊断建议"><div class="advice-icon">!</div><div class="advice-content"><div class="advice-heading">投放诊断建议 <span id="advice-time">每5分钟更新</span></div><h2 id="advice-title">正在读取最新数据</h2><p id="advice-body">取得有效样本后显示建议。</p><p class="advice-evidence" id="advice-evidence" hidden></p></div></section>
   <footer><div><span id="updated">尚未取得数据</span><span class="separator">·</span><span>自动更新</span></div><button id="refresh" type="button">立即刷新 <span aria-hidden="true">↻</span></button></footer>
-  <details class="details"><summary>其他指标、提醒与操作记录</summary><div class="detail-body"><div id="extra-metrics" class="extra-metrics"></div><h3>历史提醒</h3><div id="alerts"></div><h3>操作记录</h3><div id="events"></div><h3>计算说明</h3><p>分钟消耗为两次采样之间消耗差额折算的速度，可能受平台回传延迟影响。缺采样、跨天或消耗回落时显示“—”，不当成 0。今日平均 = 今日累计消耗 ÷ 今日零点至采样时刻的分钟数。净成交转化率为本工具按净单数与点击数计算，并非另取一个平台指标。历史数据保留，默认只显示时分。</p><p>此页面只读，不会修改 ROI、预算或素材。采集电脑需开机联网、浏览器保持千川登录；登录失效会明确提示。</p></div></details>
+  <details class="details"><summary>其他指标、提醒与操作记录</summary><div class="detail-body"><div id="extra-metrics" class="extra-metrics"></div><h3>历史提醒</h3><div id="alerts"></div><h3>操作记录</h3><div id="events"></div><h3>计算说明</h3><p>分钟消耗为两次采样之间消耗差额折算的速度，可能受平台回传延迟影响。缺采样、跨天或消耗回落时显示“—”，不当成 0。今日平均 = 今日累计消耗 ÷ 今日零点至采样时刻的分钟数。净成交转化率为本工具按净单数与点击数计算，并非另取一个平台指标。历史数据保留，默认只显示时分。</p><p>千展成本 = 今日消耗 ÷ 今日展示次数 × 1000。预算余额 = 今日计划预算减今日累计消耗，最低显示0元，不是账户余额。退款率直接读取后台“1小时内退款率”，不是最终售后退货率，也不是最近60分钟的退款。平均退款率取近7日有记录日期的最后快照，按各日整体成交金额加权；排除今天、不重复累加分钟快照，显示实际覆盖天数。历史快照可能未覆盖全天，后续退款也可能继续回传。</p><p>投放诊断建议按有效滚动样本约每5分钟更新，属于自动观察提示，不代表逐次人工审核，也不构成平台赔付结论。此页面只读，不会修改 ROI、预算或素材。采集电脑需开机联网、浏览器保持千川登录；登录失效会明确提示。</p></div></details>
   <section class="minute-details" aria-label="分钟流速明细"><div class="minute-heading"><h2>分钟流速明细</h2><span>最近 60 条 · 自动更新</span></div><div class="table-wrap"><table><thead><tr><th>时间</th><th>消耗 / 分钟</th><th>展示 / 分钟</th><th>点击 / 分钟</th><th>今日净成交单数</th><th>今日净 ROI</th><th>今日累计消耗</th></tr></thead><tbody id="history"></tbody></table></div></section>
 </main>
-<script src="app.js?v=5"></script>
+<script src="app.js?v=8"></script>
 </body></html>

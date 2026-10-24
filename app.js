@@ -18,8 +18,12 @@
     set('average',sameDay?fmt(last.dailyAverage):'—');
     set('minute-time',fresh?(last.minuteSpend===null?'正在核对分钟数据':hm(last.asOf)+' 更新'):last?'最后采样 '+hm(last.asOf):'正在取得最新数据');
     const t=sameDay?last.totals:{};
-    for(const [id,v] of Object.entries({'current-hour':t.current_hour_spend,'previous-hour':t.previous_hour_spend,'daily-spend':t.spend,'net-roi':t.net_roi,'net-cvr':t.net_cvr==null?null:t.net_cvr*100,'net-cpo':t.net_cpo}))set(id,fmt(v));
+    for(const [id,v] of Object.entries({'current-hour':t.current_hour_spend,'previous-hour':t.previous_hour_spend,'daily-spend':t.spend,'net-roi':t.net_roi,'net-cvr':t.net_cvr==null?null:t.net_cvr*100,'net-cpo':t.net_cpo,'cpm':t.cpm,'budget-remaining':t.budget_remaining,'refund-rate':t.refund_rate==null?null:t.refund_rate*100}))set(id,fmt(v));
     set('target','目标 '+fmt(t.target));set('current-hour-label',t.current_hour_label||'本小时');set('previous-hour-label',t.previous_hour_label||'上一小时');
+    set('daily-budget','今日预算 '+fmt(t.daily_budget)+' 元');
+    const refund=last&&last.refundAverage;
+    set('refund-average',refund&&refund.rate!=null?'平均退款率 '+fmt(refund.rate*100)+'% · 历史'+refund.days+'日':'平均退款率 — · 暂无历史样本');
+    $('refund-average').title='近7日内同计划有记录日期的最后快照，按整体成交金额加权；不含今天，可能未覆盖全天。';
     set('net-orders',t.net_orders==null?'今日消耗 ÷ 今日净成交单数':'今日净成交 '+t.net_orders+' 单');
     set('updated',last?'数据更新 '+hm(last.asOf):'尚未取得数据');$('updated').title=last?last.asOf:'';
     let notice='';
@@ -27,8 +31,11 @@
     else if(lastError)notice='连接暂时中断，正在自动重试。下方保留上次数据，当前分钟消耗暂不显示。';
     else if(last&&!fresh)notice=last.message||'数据暂未更新，正在自动恢复。当前分钟消耗暂不显示；采集电脑需开机联网并保持千川登录。';
     $('notice').hidden=!notice;set('notice',notice);
-    const a=fresh&&last.advice;$('advice').hidden=!a;
-    if(a){set('advice-title',a.title||'');set('advice-body',a.advice||'');set('advice-time',hm(a.at));}
+    const a=fresh&&last.advice;
+    $('advice').dataset.level=a?a.level||'hold':'hold';
+    if(a){set('advice-title',a.title||'');set('advice-body',a.advice||'');set('advice-time',hm(a.at)+' · 每'+(a.intervalMinutes||5)+'分钟更新');}
+    else{set('advice-title',fresh?'正在积累观察样本':'数据更新后再判断');set('advice-body',fresh?'先保持当前设置，待有效样本形成后显示建议。':'请先确认采集连接和数据时间，避免根据旧数据调整计划。');set('advice-time','每5分钟更新');}
+    const evidence=a&&a.evidence;set('advice-evidence',evidence?'依据：'+evidence:'');$('advice-evidence').hidden=!evidence;
     if(last){$('history').replaceChildren(...last.history.slice().reverse().map(r=>{const tr=document.createElement('tr');for(const v of [hm(r.at),fmt(r.minuteSpend),fmt(r.impressionsPerMinute),fmt(r.clicksPerMinute),r.netOrders==null?'—':String(r.netOrders),fmt(r.netRoi),fmt(r.spend)]){const td=document.createElement('td');td.textContent=v;tr.append(td);}tr.title=r.at;return tr;}));
       const d=last.details||{},percent=v=>v==null?'—':fmt(v*100)+'%';
       const items=[['数据质量',d.data_quality],['数据源延迟',d.source_age_seconds==null?null:Math.round(d.source_age_seconds)+' 秒'],['今日展示次数',d.impressions],['今日点击次数',d.clicks],['今日支付订单数',d.paid_orders],['今日净成交订单数',d.net_orders],['今日支付成交金额',fmt(d.paid_amount)+' 元'],['今日净成交金额',fmt(d.net_amount)+' 元'],['累计 CPM',fmt(d.cpm)],['累计 CTR',percent(d.ctr)],['累计 CPC',fmt(d.cpc)],['累计支付转化率',percent(d.paid_cvr)],['累计净成交转化率',percent(d.net_cvr)],['支付每单成本',fmt(d.paid_cpo)],['净成交每单成本',fmt(d.net_cpo)],['支付 ROI',fmt(d.paid_roi)],['ROI 目标',fmt(d.target)],['今日预算',fmt(d.daily_budget)+' 元'],['今日剩余预算',fmt(d.budget_remaining)+' 元'],['预算消耗速度',d.budget_burn_rate==null?null:fmt(d.budget_burn_rate)+' 元 / 小时'],['按当前速度可跑',d.budget_eta_minutes==null?null:fmt(d.budget_eta_minutes)+' 分钟']];
