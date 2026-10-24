@@ -2,8 +2,9 @@
   'use strict';
   const $=id=>document.getElementById(id),fmt=v=>typeof v==='number'&&Number.isFinite(v)?v.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
   const hm=v=>{const d=new Date(v);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit',hour12:false}).format(d):'—';};
-  const key=location.hash.slice(1)||sessionStorage.getItem('taoge-key')||'';
-  if(key)sessionStorage.setItem('taoge-key',key);
+  let savedKey='';try{savedKey=sessionStorage.getItem('taoge-key')||'';}catch(e){}
+  const key=location.hash.slice(1)||savedKey;
+  if(key)try{sessionStorage.setItem('taoge-key',key);}catch(e){}
   const local=['127.0.0.1','localhost'].includes(location.hostname);
   let endpoint=local?location.origin:'',endpointAt=0,last=null,busy=false,lastError='',clockOffset=0;
   const set=(id,v)=>$(id).textContent=v;
@@ -15,7 +16,9 @@
     $('connection').className='connection '+(fresh?'live':lastError||age>180?'error':'warning');set('connection-text',status);
     $('circle').classList.toggle('stale',!fresh);
     set('minute',fresh?fmt(last.minuteSpend):'—');
+    set('minute-clicks',fresh?fmt(last.minuteClicks):'—');
     set('average',sameDay?fmt(last.dailyAverage):'—');
+    set('average-clicks',sameDay?fmt(last.dailyAverageClicks):'—');
     set('minute-time',fresh?(last.minuteSpend===null?'正在核对分钟数据':hm(last.asOf)+' 更新'):last?'最后采样 '+hm(last.asOf):'正在取得最新数据');
     const t=sameDay?last.totals:{};
     for(const [id,v] of Object.entries({'current-hour':t.current_hour_spend,'previous-hour':t.previous_hour_spend,'daily-spend':t.spend,'net-roi':t.net_roi,'net-cvr':t.net_cvr==null?null:t.net_cvr*100,'net-cpo':t.net_cpo,'cpm':t.cpm,'budget-remaining':t.budget_remaining,'refund-rate':t.refund_rate==null?null:t.refund_rate*100}))set(id,fmt(v));
@@ -28,7 +31,7 @@
     set('updated',last?'数据更新 '+hm(last.asOf):'尚未取得数据');$('updated').title=last?last.asOf:'';
     let notice='';
     if(!key)notice='请使用涛哥分享的完整专属链接打开，链接需包含 # 后面的访问码。';
-    else if(lastError)notice='连接暂时中断，正在自动重试。下方保留上次数据，当前分钟消耗暂不显示。';
+    else if(lastError)notice=last?'连接暂时中断，正在自动重试。下方保留上次数据，当前分钟消耗暂不显示。':'实时数据暂未连接，正在自动重试。请稍候，连接成功后会自动显示。';
     else if(last&&!fresh)notice=last.message||'数据暂未更新，正在自动恢复。当前分钟消耗暂不显示；采集电脑需开机联网并保持千川登录。';
     $('notice').hidden=!notice;set('notice',notice);
     const a=fresh&&last.advice;
@@ -46,19 +49,29 @@
       records('events',last.events||[],r=>hm(r.at)+' · '+(r.label||r.field||r.type||'变更')+' '+String(r.before??'—')+' → '+String(r.after??'—'));
     }
   }
-  async function json(url,opts={}){const r=await fetch(url,{cache:'no-store',signal:AbortSignal.timeout(14000),...opts});if(!r.ok)throw Error('HTTP '+r.status);return r.json();}
-  async function discover(force=false){
+  async function json(url,opts={}){
+    const controller=typeof AbortController==='function'?new AbortController():null;
+    const timer=controller?setTimeout(()=>controller.abort(),14000):null;
+    try{const r=await fetch(url,{cache:'no-store',...(controller?{signal:controller.signal}:{}),...opts});if(!r.ok)throw Error('HTTP '+r.status);return await r.json();}
+    finally{if(timer!==null)clearTimeout(timer);}
+  }
+  async function discover(force=false,exclude=''){
     if(local)return;
     if(!force&&endpoint&&Date.now()-endpointAt<180000)return;
-    const d=await json('https://raw.githubusercontent.com/1492935695-cyber/taoge-secret-weapon/main/endpoint.json?t='+Date.now());
-    if(!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(d.endpoint||''))throw Error('Waiting for connection');
-    endpoint=d.endpoint;endpointAt=Date.now();
+    const sources=[new URL('endpoint.json?t='+Date.now(),location.href).href,'https://raw.githubusercontent.com/1492935695-cyber/taoge-secret-weapon/main/endpoint.json?t='+Date.now()];
+    let failure;
+    for(const source of sources){try{
+      const d=await json(source);
+      if(!/^https:\/\/[a-z0-9-]+\.trycloudflare\.com$/.test(d.endpoint||'')||d.endpoint===exclude)throw Error('Waiting for connection');
+      endpoint=d.endpoint;endpointAt=Date.now();return;
+    }catch(e){failure=e;}}
+    throw failure||Error('Waiting for connection');
   }
   async function refresh(){
     if(busy||!key){render();return;}busy=true;$('refresh').disabled=true;
     try{await discover();let data;
       try{data=await json(endpoint+'/api/snapshot?t='+Date.now(),{headers:{Authorization:'Bearer '+key}});}
-      catch(e){if(local)throw e;await discover(true);data=await json(endpoint+'/api/snapshot?t='+Date.now(),{headers:{Authorization:'Bearer '+key}});}
+      catch(e){if(local)throw e;await discover(true,endpoint);data=await json(endpoint+'/api/snapshot?t='+Date.now(),{headers:{Authorization:'Bearer '+key}});}
       if(data.version!==4)throw Error('Unexpected data');last=data;lastError='';clockOffset=typeof data.serverAt==='string'?new Date(data.serverAt).getTime()-Date.now():0;
     }catch(e){lastError=e.message;}finally{busy=false;$('refresh').disabled=false;render();}
   }
