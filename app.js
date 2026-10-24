@@ -1,6 +1,6 @@
 (() => {
   'use strict';
-  const $=id=>document.getElementById(id),fmt=v=>typeof v==='number'&&Number.isFinite(v)?v.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';
+  const $=id=>document.getElementById(id),fmt=v=>typeof v==='number'&&Number.isFinite(v)?v.toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2}):'—',fmtCount=v=>typeof v==='number'&&Number.isFinite(v)?Math.round(v).toLocaleString('zh-CN'):'—';
   const hm=v=>{const d=new Date(v);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat('zh-CN',{timeZone:'Asia/Shanghai',hour:'2-digit',minute:'2-digit',hour12:false}).format(d):'—';};
   let savedKey='';try{savedKey=sessionStorage.getItem('taoge-key')||'';}catch(e){}
   const key=location.hash.slice(1)||savedKey;
@@ -21,8 +21,9 @@
     set('average-clicks',sameDay?fmt(last.dailyAverageClicks):'—');
     set('minute-time',fresh?(last.minuteSpend===null?'正在核对分钟数据':hm(last.asOf)+' 更新'):last?'最后采样 '+hm(last.asOf):'正在取得最新数据');
     const t=sameDay?last.totals:{};
-    for(const [id,v] of Object.entries({'current-hour':t.current_hour_spend,'previous-hour':t.previous_hour_spend,'daily-spend':t.spend,'net-roi':t.net_roi,'net-cvr':t.net_cvr==null?null:t.net_cvr*100,'net-cpo':t.net_cpo,'cpm':t.cpm,'budget-remaining':t.budget_remaining,'refund-rate':t.refund_rate==null?null:t.refund_rate*100}))set(id,fmt(v));
-    set('target','目标 '+fmt(t.target));set('current-hour-label',t.current_hour_label||'本小时');set('previous-hour-label',t.previous_hour_label||'上一小时');
+    for(const [id,v] of Object.entries({'current-hour':t.current_hour_spend,'previous-hour':t.previous_hour_spend,'daily-spend':t.spend,'current-hour-net-roi':t.current_hour_net_roi,'net-roi':t.net_roi,'net-cvr':t.net_cvr==null?null:t.net_cvr*100,'net-cpo':t.net_cpo,'cpm':t.cpm,'budget-remaining':t.budget_remaining,'refund-rate':t.refund_rate==null?null:t.refund_rate*100}))set(id,fmt(v));
+    set('current-hour-paid-orders',fmtCount(t.current_hour_paid_orders));set('paid-orders',fmtCount(t.paid_orders));
+    set('target','目标 '+fmt(t.target));set('current-hour-label',t.current_hour_label||'本小时');set('current-hour-roi-label',t.current_hour_label||'本小时');set('current-hour-paid-orders-label',t.current_hour_label||'本小时');set('previous-hour-label',t.previous_hour_label||'上一小时');
     set('daily-budget','今日预算 '+fmt(t.daily_budget)+' 元');
     const refund=last&&last.refundAverage;
     set('refund-average',refund&&refund.rate!=null?'平均退款率 '+fmt(refund.rate*100)+'% · 历史'+refund.days+'日':'平均退款率 — · 暂无历史样本');
@@ -36,7 +37,7 @@
     $('notice').hidden=!notice;set('notice',notice);
     const canFallback=lastError&&!local&&endpoint&&key;
     $('fallback-link').hidden=!canFallback;
-    if(canFallback)$('fallback-link').href=endpoint+'/?v=12#'+key;
+    if(canFallback)$('fallback-link').href=endpoint+'/?v=13#'+key;
     const a=fresh&&last.advice;
     $('advice').dataset.level=a?a.level||'hold':'hold';
     if(a){set('advice-title',a.title||'');set('advice-body',a.advice||'');set('advice-time',hm(a.at)+' · 每'+(a.intervalMinutes||5)+'分钟更新');}
