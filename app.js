@@ -16,7 +16,7 @@
     $('circle').classList.toggle('stale',!fresh);
     set('minute',fresh?fmt(last.minuteSpend):'—');
     set('average',sameDay?fmt(last.dailyAverage):'—');
-    set('minute-time',fresh?(last.minuteSpend===null?'首个样本已到，等待下一分钟':hm(last.asOf)+' 更新'):last?'最后采样 '+hm(last.asOf):'正在取得最新数据');
+    set('minute-time',fresh?(last.minuteSpend===null?'正在核对分钟数据':hm(last.asOf)+' 更新'):last?'最后采样 '+hm(last.asOf):'正在取得最新数据');
     const t=sameDay?last.totals:{};
     for(const [id,v] of Object.entries({'current-hour':t.current_hour_spend,'previous-hour':t.previous_hour_spend,'daily-spend':t.spend,'net-roi':t.net_roi,'net-cvr':t.net_cvr==null?null:t.net_cvr*100,'net-cpo':t.net_cpo}))set(id,fmt(v));
     set('target','目标 '+fmt(t.target));set('current-hour-label',t.current_hour_label||'本小时');set('previous-hour-label',t.previous_hour_label||'上一小时');
